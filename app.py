@@ -1,43 +1,38 @@
-import pandas as pd
-import streamlit as st
+import numpy as np
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Embedding, LSTM, Dense
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.preprocessing.sequence import pad_sequences
 
-# SQL query templates
-sql_templates = {
-    'Tell me what the notes are for South Australia ': 'SELECT Notes FROM table WHERE Current slogan = SOUTH AUSTRALIA',
-    'What is the current series where the new series began in June 2011?': 'SELECT Current series FROM table WHERE Notes = New series began in June 2011',
-    'What is the format for South Australia?': 'SELECT Format FROM table WHERE State/territory = South Australia',
-    'Name the background colour for the Australian Capital Territory': 'SELECT Text/background colour FROM table WHERE State/territory = Australian Capital Territory',
-    'how many times is the fuel propulsion is cng?': 'SELECT COUNT Fleet Series (Quantity) FROM table WHERE Fuel Propulsion = CNG',
-    'what is the fuel propulsion where the fleet series (quantity) is 310-329 (20)?': 'SELECT Fuel Propulsion FROM table WHERE Fleet Series (Quantity) = 310-329 (20)',
-    'who is the manufacturer for the order year 1998?': 'SELECT Manufacturer FROM table WHERE Order Year = 1998',
-    'how many times is the model ge40lfr?': 'SELECT COUNT Manufacturer FROM table WHERE Model = GE40LFR',
-    'how many times is the fleet series (quantity) is 468-473 (6)?': 'SELECT COUNT Order Year FROM table WHERE Fleet Series (Quantity) = 468-473 (6)',
-    'what is the powertrain (engine/transmission) when the order year is 2000?': 'SELECT Powertrain (Engine/Transmission) FROM table WHERE Order Year = 2000',
-    
-}
+# Sample data
+questions = ["What is your name?", "How are you?", "What do you do?"]
+queries = ["My name is John.", "I'm fine, thank you.", "I'm a software engineer."]
 
-# Streamlit app
-def main():
-    st.title('Query Generator')
+# Tokenize and pad sequences
+vocab_size = 1000  # Set your vocabulary size accordingly
+max_len = 10  # Set your maximum sequence length accordingly
 
-    # Text input for user to enter the query
-    user_query = st.text_area('Enter your query:', height=100)
+tokenizer = Tokenizer(num_words=vocab_size, oov_token="<OOV>")
+tokenizer.fit_on_texts(questions + queries)
 
-    # Button to execute the query
-    if st.button('Generate SQL Query'):
-        # Apply the conversion function to the user query
-        sql_query = query_to_sql(user_query)
+tokenized_questions = tokenizer.texts_to_sequences(questions)
+tokenized_queries = tokenizer.texts_to_sequences(queries)
 
-        # Display the SQL query
-        st.subheader('Generated SQL Query:')
-        st.code(sql_query, language='sql')
+padded_questions = pad_sequences(tokenized_questions, maxlen=max_len, padding='post')
+padded_queries = pad_sequences(tokenized_queries, maxlen=max_len, padding='post')
 
-# Function to convert a query into an SQL query
-def query_to_sql(query):
-    for query_type, template in sql_templates.items():
-        if query_type in query:
-            return template
-    return sql_templates
+# Define the model
+embedding_dim = 50  # Set your embedding dimension accordingly
 
-if __name__ == '__main__':
-    main()
+model = Sequential([
+    Embedding(input_dim=vocab_size, output_dim=embedding_dim, input_length=max_len),
+    LSTM(64),
+    Dense(vocab_size, activation='softmax')  # Adjust units based on your task
+])
+
+model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+
+# Train the model
+labels = np.arange(len(padded_queries))  # Example labels, adjust accordingly
+model.fit(padded_questions, labels, epochs=10, batch_size=1)
+
