@@ -37,7 +37,7 @@ def query_to_sql(query):
     for query_type, template in sql_templates.items():
         if query_type in query:
             return template
-    return 'sql_templates'
+    return sql_templates
 
 if __name__ == '__main__':
     main()
