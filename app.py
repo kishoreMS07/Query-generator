@@ -35,7 +35,7 @@ def main():
 # Function to convert a query into an SQL query
 def query_to_sql(query):
     for query_type, template in sql_templates.items():
-        if query_type in query:s
+        if query_type in query:
             return template
     return sql_templates
 
