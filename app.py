@@ -37,7 +37,7 @@ def query_to_sql(query):
     for query_type, template in sql_templates.items():
         if query_type in query:
             return template
-    return "SELECT COUNT(*) FROM head WHERE age > 56"
+    return 'sql_temolates'
 
 if __name__ == '__main__':
     main()
